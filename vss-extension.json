@@ -1,16 +1,16 @@
 {
   "manifestVersion": 1,
-  "id": "ai-code-review",
-  "publisher": "TommiLaukkanen",
-  "version": "1.0.20",
-  "name": "AI Code Review Task",
-  "description": "AI code review extension to review pull request changes using your own Azure OpenAI endpoints",
+  "id": "ai-code-review-claude",
+  "publisher": "Maciej Tubek",
+  "version": "1.0.0",
+  "name": "AI Claude Code Review Task",
+  "description": "AI code review extension to review pull request changes using your own Claude endpoints",
   "public": false,
   "categories": ["Azure Repos", "Azure Pipelines"],
-  "tags": ["ai", "openai", "gpt", "llm", "gpt4", "copilot", "code", "review", "chatgpt"],
+  "tags": ["ai", "openai", "gpt", "llm", "claude", "copilot", "code", "review"],
   "repository": {
     "type": "git",
-    "uri": "https://github.com/tlaukkanen/azure-devops-ai-code-review"
+    "uri": "https://github.com/mtubek/azure-devops-ai-code-review-claude"
   },
   "icons": {
     "default": "images/icon-128x128.png"
@@ -22,11 +22,11 @@
   ],
   "contributions": [
     {
-      "id": "ai-code-review",
+      "id": "ai-code-review-claude",
       "type": "ms.vss-distributed-task.task",
       "targets": ["ms.vss-distributed-task.tasks"],
       "properties": {
-        "name": "ai-code-review"
+        "name": "ai-code-review-claude"
       }
     }
   ],
@@ -40,7 +40,7 @@
   },
   "files": [
     {
-      "path": "ai-code-review"
+      "path": "ai-code-review-claude"
     },
     {
       "path": "screenshots",
@@ -53,7 +53,7 @@
   ],
   "links": {
     "repository": {
-      "uri": "https://github.com/tlaukkanen/azure-devops-ai-code-review"
+      "uri": "https://github.com/mtubek/azure-devops-ai-code-review-claude"
     }
   },
   "screenshots": [
@@ -65,3 +65,4 @@
     }
   ]
 }
+
