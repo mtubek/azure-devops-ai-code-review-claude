@@ -3,39 +3,39 @@
     "id": "abd1f390-3d55-4eb2-af0a-273c5dbf256f",
     "name": "AICodeReview",
     "friendlyName": "AI Code Review",
-    "description": "Complete a Code Review using Azure OpenAI services",
+    "description": "Complete a Code Review using Claude",
     "category": "Utility",
-    "author": "Tommi Laukkanen",
+    "author": "Maciej Tubek",
     "version": {
         "Major": 1,
         "Minor": 0,
-        "Patch": 20
+        "Patch": 0
     },
     "instanceNameFormat": "AI Code Review $(message)",
     "inputs": [
         {
-            "name": "azureOpenAiDeploymentEndpointUrl",
+            "name": "azureClaudeDeploymentEndpointUrl",
             "type": "string",
-            "label": "Azure OpenAI deployment endpoint URL",
+            "label": "Claude deployment endpoint URL",
             "defaultValue": "",
             "required": true,
-            "helpMarkDown": "URL to your Azure OpenAI deployment endpoint."
+            "helpMarkDown": "URL to your Claude deployment endpoint."
         },
         {
-            "name": "azureOpenAiApiKey",
+            "name": "azureClaudeApiKey",
             "type": "string",
-            "label": "Key to your Azure OpenAI deployment endpoint",
+            "label": "Key to your Claude deployment endpoint",
             "defaultValue": "",
             "required": true,
-            "helpMarkDown": "Key to your Azure OpenAI deployment endpoint."
+            "helpMarkDown": "Key to your Claude deployment endpoint."
         },
         {
-            "name": "azureOpenAiApiVersion",
+            "name": "azureClaudeApiVersion",
             "type": "string",
-            "label": "Azure OpenAI API version",
+            "label": "Azure Claude API version",
             "defaultValue": "2024-07-01-preview",
             "required": true,
-            "helpMarkDown": "Azure OpenAI API version."
+            "helpMarkDown": "Claude API version."
         },
         {
             "name": "reviewBugs",
