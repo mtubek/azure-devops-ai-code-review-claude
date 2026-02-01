@@ -1,22 +1,22 @@
 {
-  "name": "azure-devops-ai-code-review",
-  "version": "1.0.1",
-  "description": "AI code review extension for Azure DevOps using Azure OpenAI services",
+  "name": "claude-ai-code-review",
+  "version": "1.0.0",
+  "description": "AI code review extension for Azure DevOps using Claude",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tlaukkanen/azure-devops-ai-code-review.git"
+    "url": "git+https://github.com/mtubek/azure-devops-ai-code-review-claude.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tlaukkanen/azure-devops-ai-code-review/issues"
+    "url": "https://github.com/mtubek/azure-devops-ai-code-review-claude/issues"
   },
-  "homepage": "https://github.com/tlaukkanen/azure-devops-ai-code-review#readme",
+  "homepage": "https://github.com/mtubek/azure-devops-ai-code-review-claude#readme",
   "dependencies": {
     "vss-web-extension-sdk": "^5.141.0"
   }
