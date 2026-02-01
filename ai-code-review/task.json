@@ -14,28 +14,20 @@
     "instanceNameFormat": "AI Code Review $(message)",
     "inputs": [
         {
-            "name": "azureClaudeDeploymentEndpointUrl",
+            "name": "claudeApiKey",
             "type": "string",
-            "label": "Claude deployment endpoint URL",
+            "label": "Claude API Key",
             "defaultValue": "",
             "required": true,
-            "helpMarkDown": "URL to your Claude deployment endpoint."
+            "helpMarkDown": "Your Anthropic Claude API key. Get one at https://console.anthropic.com/"
         },
         {
-            "name": "azureClaudeApiKey",
+            "name": "claudeModel",
             "type": "string",
-            "label": "Key to your Claude deployment endpoint",
-            "defaultValue": "",
+            "label": "Claude Model",
+            "defaultValue": "claude-3-5-sonnet-20241022",
             "required": true,
-            "helpMarkDown": "Key to your Claude deployment endpoint."
-        },
-        {
-            "name": "azureClaudeApiVersion",
-            "type": "string",
-            "label": "Azure Claude API version",
-            "defaultValue": "2024-07-01-preview",
-            "required": true,
-            "helpMarkDown": "Claude API version."
+            "helpMarkDown": "Claude model to use (e.g., claude-3-5-sonnet-20241022, claude-3-opus-20240229). See https://docs.anthropic.com/en/docs/models-overview"
         },
         {
             "name": "reviewBugs",
@@ -80,7 +72,7 @@
             "label": "Additional Prompts",
             "defaultValue": "",
             "required": false,
-            "helpMarkDown": "Specify additional Open AI prompt to enhance the code review process.\n\n- This prompt will be used in conjunction with the main code review prompts.\n\n**Example:**\n```plaintext\nFix variable naming, Ensure consistent indentation, Review error handling approach\n```"
+            "helpMarkDown": "Specify additional prompts to enhance the code review process.\n\n- This prompt will be used in conjunction with the main code review prompts.\n\n**Example:**\n```plaintext\nFix variable naming, Ensure consistent indentation, Review error handling approach\n```"
         },
         {
             "name": "promptTokensPricePerMillionTokens",

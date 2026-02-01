@@ -22,11 +22,11 @@
   ],
   "contributions": [
     {
-      "id": "ai-code-review-claude",
+      "id": "ai-code-review",
       "type": "ms.vss-distributed-task.task",
       "targets": ["ms.vss-distributed-task.tasks"],
       "properties": {
-        "name": "ai-code-review-claude"
+        "name": "ai-code-review"
       }
     }
   ],
@@ -40,7 +40,7 @@
   },
   "files": [
     {
-      "path": "ai-code-review-claude"
+      "path": "ai-code-review"
     },
     {
       "path": "screenshots",

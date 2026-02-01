@@ -1,12 +1,12 @@
 import tl = require('azure-pipelines-task-lib/task');
-import { encode } from 'gpt-tokenizer';
-import OpenAI, { AzureOpenAI } from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
 export class ChatCompletion {
     private readonly systemMessage: string = '';
 
     constructor(
-        private _openAi: AzureOpenAI, 
+        private _anthropic: Anthropic,
+        private _model: string,
         checkForBugs: boolean = false,
         checkForPerformance: boolean = false,
         checkForBestPractices: boolean = false,
@@ -48,35 +48,31 @@ export class ChatCompletion {
 `}
     }
 
-    public async PerformCodeReview(diff: string, fileName: string): 
+    public async PerformCodeReview(diff: string, fileName: string):
             Promise<{response: string, promptTokens: number, completionTokens: number}> {
 
         if (!this.doesMessageExceedTokenLimit(diff + this.systemMessage, this._maxTokens)) {
 
-            let openAi = await this._openAi.chat.completions.create({
+            const message = await this._anthropic.messages.create({
+                model: this._model,
+                max_tokens: this._maxTokens,
+                system: this.systemMessage,
                 messages: [
-                    {
-                        role: 'system',
-                        content: this.systemMessage
-                    },
                     {
                         role: 'user',
                         content: diff
-                    },
-                ],
-                model: ''
+                    }
+                ]
             });
 
-            let response = openAi.choices;
-            const tokenUsage = openAi.usage;
-            const tokenUsageString = JSON.stringify(tokenUsage);
+            const tokenUsageString = JSON.stringify(message.usage);
             console.info(`Usage: ${tokenUsageString}`);
 
-            if (response.length > 0) {
+            if (message.content && message.content.length > 0 && message.content[0].type === 'text') {
                 return {
-                    response: response[0].message.content!,
-                    promptTokens: tokenUsage!.prompt_tokens,
-                    completionTokens: tokenUsage!.completion_tokens,
+                    response: message.content[0].text,
+                    promptTokens: message.usage.input_tokens,
+                    completionTokens: message.usage.output_tokens,
                 };
             }
         }
@@ -86,8 +82,10 @@ export class ChatCompletion {
     }
 
     private doesMessageExceedTokenLimit(message: string, tokenLimit: number): boolean {
-        let tokens = encode(message);
-        return tokens.length > tokenLimit;
+        // Rough approximation: ~4 characters per token
+        // Claude's actual tokenization may vary, but this provides a reasonable estimate
+        const estimatedTokens = Math.ceil(message.length / 4);
+        return estimatedTokens > tokenLimit;
     }
 
 }
