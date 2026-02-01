@@ -1,13 +1,12 @@
 # AI Code Review DevOps Extension
 
-<a href="https://www.buymeacoffee.com/tlaukkanen" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
 ## Supercharge Your Code Reviews with Azure Open AI Services
 
-Use your own Azure OpenAI service endpoints to provide pull request code reviews while keeping your code private.
+Use your own Azure Claude service endpoints to provide pull request code reviews while keeping your code private.
 
-- **AI Powered Insights:** Optimized for latest LLM models like GPT-4o-mini, which provides optimal high performance with small cost.
-- **Security and Privacy:** Use your own Azure OpenAI model deployment for reviews
+- **AI Powered Insights:** Optimized for latest LLM models like which provides optimal high performance with small cost.
+- **Security and Privacy:** Use your own Azure Claude model deployment for reviews
 - **Automated Summaries:** Let AI summarise your pull request so it's easier for humans to follow. AI will also provide feedback for all changes related to bugs, performance, best practices etc.
 - **Easy to install:** A simple one-click installation from the [Azure DevOps Marketplace]([https://marketplace.visualstudio.com/azuredevops](https://marketplace.visualstudio.com/items?itemName=TommiLaukkanen.ai-code-review)) gets you up and running instantly. Configure to your pipeline as shown below.
 - **Faster Reviews:** Reduce the time spent on code reviews. Let Open AI handle the routine, allowing your team to focus on impactful work.
@@ -23,7 +22,7 @@ Click for larger version:
 
 ## What does it cost?
 
-The extension itself is free. The reviews will utilize your own Azure OpenAI services so it will depend on the model that you deploy. As of today October 2024 the GPT-4o-mini seems to be optimal for this purpose and is cheap to use - today price for input prompt was $0.15 per 1M tokens, output was $0.60 per 1M tokens. While completing many pull requests the price per code review ranges from ~$0.0002 to ~$0.002 per review - so if you have 1000 PRs per month it's a [price of coffee](https://www.buymeacoffee.com/tlaukkanen) 😉
+The extension itself is free. The reviews will utilize your own Azure Claude services so it will depend on the model that you deploy. As of today October 2024 the GPT-4o-mini seems to be optimal for this purpose and is cheap to use - today price for input prompt was $0.15 per 1M tokens, output was $0.60 per 1M tokens. While completing many pull requests the price per code review ranges from ~$0.0002 to ~$0.002 per review - so if you have 1000 PRs per month it's a [price of coffee](https://www.buymeacoffee.com/tlaukkanen) 😉
 
 You can set the token pricing on the task parameters and then you can see from your logs how much each of the reviews cost:
 
@@ -32,9 +31,9 @@ You can set the token pricing on the task parameters and then you can see from y
 ## Prerequisites
 
 - [Azure DevOps Account](https://dev.azure.com/)
-- Azure OpenAI endpoint URI
-- Azure OpenAI endpoint key
-- Optional: Pricing for input and output tokens (check from [Azure OpenAI Pricing](https://azure.microsoft.com/en-us/pricing/details/cognitive-services/openai-service/#pricing))
+- Azure Claude endpoint URI
+- Azure Claude endpoint key
+- Optional: Pricing for input and output tokens (check from [Azure Claude Pricing](https://claude.com/pricing#api))
 
 ## Getting started
 
@@ -59,9 +58,9 @@ You can set the token pricing on the task parameters and then you can see from y
     steps:
     - task: AICodeReview@1
       inputs:
-        azureOpenAiDeploymentEndpointUrl: $(AzureOpenAiDeploymentEndpoint)
-        azureOpenAiApiKey: $(AzureOpenAiDeploymentKey)
-        azureOpenAiApiVersion: "2024-07-01-preview"
+        azureClaudeDeploymentEndpointUrl: $(AzureClaudeDeploymentEndpoint)
+        azureClaudeApiKey: $(AzureClaudeDeploymentKey)
+        azureClaudeApiVersion: "2024-07-01-preview"
         promptTokensPricePerMillionTokens: "0.15"
         completionTokensPricePerMillionTokens: "0.6"
         addCostToComments: true
@@ -102,4 +101,3 @@ This project is licensed under the [MIT License](LICENSE).
 
 If you would like to contribute to the development of this extension, please follow our contribution guidelines.
 
-Project was originally forked from [a1dancole/OpenAI-Code-Review](https://github.com/a1dancole/OpenAI-Code-Review).
