@@ -7,6 +7,7 @@ export class ChatCompletion {
     constructor(
         private _anthropic: Anthropic,
         private _model: string,
+        private _responseLanguage: string = 'Polish',
         checkForBugs: boolean = false,
         checkForPerformance: boolean = false,
         checkForBestPractices: boolean = false,
@@ -14,7 +15,12 @@ export class ChatCompletion {
         private _maxTokens: number = 16384,
         numberOfFilesToReview: number = 1
      ) {
-        this.systemMessage = `Your task is to act as a code reviewer of a Pull Request:
+        const languageInstruction = this.getLanguageInstruction(_responseLanguage);
+
+        this.systemMessage = `Your task is to act as a code reviewer of a Pull Request.
+
+        ${languageInstruction}
+
         ${numberOfFilesToReview > 1 ? '- Generate high-level summary and a technical walkthrough of all pull request changes' : null}
         ${checkForBugs ? '- If there are any bugs, highlight them.' : null}
         ${checkForPerformance ? '- If there are major performance problems, highlight them.' : null}
@@ -24,9 +30,9 @@ export class ChatCompletion {
         - Only provide instructions for improvements.
         - If you have no specific instructions for a certain topic, then do not mention the topic at all.
         - If you have no instructions for code then respond with NO_COMMENT only, otherwise provide your instructions.
-    
+
         You are provided with the code changes (diffs) in a unidiff format.
-        
+
         The response should be in markdown format:
         - Use bullet points if you have multiple comments. Utilize emojis to make your comments more engaging.
         - Use the code block syntax for larger code snippets but do not wrap the whole response in a code block
@@ -50,6 +56,12 @@ export class ChatCompletion {
 
     public async PerformCodeReview(diff: string, fileName: string):
             Promise<{response: string, promptTokens: number, completionTokens: number}> {
+
+        // Check if diff is empty
+        if (!diff || diff.trim().length === 0) {
+            tl.warning(`Skipping ${fileName} - no changes detected`);
+            return {response: '', promptTokens: 0, completionTokens: 0};
+        }
 
         if (!this.doesMessageExceedTokenLimit(diff + this.systemMessage, this._maxTokens)) {
 
@@ -86,6 +98,18 @@ export class ChatCompletion {
         // Claude's actual tokenization may vary, but this provides a reasonable estimate
         const estimatedTokens = Math.ceil(message.length / 4);
         return estimatedTokens > tokenLimit;
+    }
+
+    private getLanguageInstruction(language: string): string {
+        const languageMap: { [key: string]: string } = {
+            'Polish': 'IMPORTANT: Respond in Polish language (Polski). All your comments and feedback must be written in Polish.',
+            'English': 'IMPORTANT: Respond in English language. All your comments and feedback must be written in English.',
+            'German': 'IMPORTANT: Respond in German language (Deutsch). All your comments and feedback must be written in German.',
+            'French': 'IMPORTANT: Respond in French language (Français). All your comments and feedback must be written in French.',
+            'Spanish': 'IMPORTANT: Respond in Spanish language (Español). All your comments and feedback must be written in Spanish.'
+        };
+
+        return languageMap[language] || languageMap['Polish'];
     }
 
 }

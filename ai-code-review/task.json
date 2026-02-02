@@ -1,6 +1,6 @@
 {
     "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
-    "id": "abd1f390-3d55-4eb2-af0a-273c5dbf256f",
+    "id": "89886492-9f75-4549-bed4-68d2ed08f649",
     "name": "AICodeReview",
     "friendlyName": "AI Code Review",
     "description": "Complete a Code Review using Claude",
@@ -9,7 +9,7 @@
     "version": {
         "Major": 1,
         "Minor": 0,
-        "Patch": 0
+        "Patch": 4
     },
     "instanceNameFormat": "AI Code Review $(message)",
     "inputs": [
@@ -28,6 +28,21 @@
             "defaultValue": "claude-3-5-sonnet-20241022",
             "required": true,
             "helpMarkDown": "Claude model to use (e.g., claude-3-5-sonnet-20241022, claude-3-opus-20240229). See https://docs.anthropic.com/en/docs/models-overview"
+        },
+        {
+            "name": "responseLanguage",
+            "type": "pickList",
+            "label": "Response Language",
+            "defaultValue": "Polish",
+            "required": true,
+            "helpMarkDown": "Language for Claude's code review responses",
+            "options": {
+                "Polish": "Polish (Polski)",
+                "English": "English",
+                "German": "German (Deutsch)",
+                "French": "French (Français)",
+                "Spanish": "Spanish (Español)"
+            }
         },
         {
             "name": "reviewBugs",

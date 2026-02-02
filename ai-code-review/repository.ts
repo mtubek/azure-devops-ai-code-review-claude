@@ -15,10 +15,23 @@ export class Repository {
         this._repository = simpleGit(this.gitOptions);
         this._repository.addConfig('core.pager', 'cat');
         this._repository.addConfig('core.quotepath', 'false');
+
+        // Configure git to use Azure DevOps access token for authentication
+        const accessToken = tl.getVariable('System.AccessToken');
+        if (accessToken) {
+            const encodedToken = Buffer.from(`PAT:${accessToken}`).toString('base64');
+            this._repository.addConfig('http.extraheader', `AUTHORIZATION: basic ${encodedToken}`);
+        }
     }
 
     public async GetChangedFiles(fileExtensions: string | undefined, filesToExclude: string | undefined): Promise<string[]> {
-        await this._repository.fetch();
+        // Try to fetch latest changes, but don't fail if it doesn't work
+        // Azure Pipelines should already have the necessary commits checked out
+        try {
+            await this._repository.fetch();
+        } catch (error) {
+            console.log('Warning: Could not fetch from remote. Using local repository state.');
+        }
 
         let targetBranch = this.GetTargetBranch();
 
@@ -44,8 +57,13 @@ export class Repository {
 
     public async GetDiff(fileName: string): Promise<string> {
         let targetBranch = this.GetTargetBranch();
-        
+
         let diff = await this._repository.diff([targetBranch, '--', fileName]);
+
+        console.log(`Diff for ${fileName}: ${diff.length} characters`);
+        if (!diff || diff.trim().length === 0) {
+            console.log(`Warning: Empty diff for file ${fileName} against branch ${targetBranch}`);
+        }
 
         return diff;
     }

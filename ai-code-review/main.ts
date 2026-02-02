@@ -22,6 +22,7 @@ export class Main {
 
         const apiKey = tl.getInput('claudeApiKey', true)!;
         const model = tl.getInput('claudeModel', true)!;
+        const responseLanguage = tl.getInput('responseLanguage', false) ?? 'Polish';
         const fileExtensions = tl.getInput('fileExtensions', false);
         const filesToExclude = tl.getInput('fileExcludes', false);
         const additionalPrompts = tl.getInput('additionalPrompts', false)?.split(',')
@@ -39,9 +40,18 @@ export class Main {
         this._pullRequest = new PullRequest();
         let filesToReview = await this._repository.GetChangedFiles(fileExtensions, filesToExclude);
 
+        console.info(`Found ${filesToReview.length} files to review: ${filesToReview.join(', ')}`);
+
+        if (filesToReview.length === 0) {
+            console.info('No files to review. Skipping code review.');
+            tl.setResult(tl.TaskResult.Succeeded, "No files to review.");
+            return;
+        }
+
         this._chatCompletion = new ChatCompletion(
             client,
             model,
+            responseLanguage,
             tl.getBoolInput('reviewBugs', true),
             tl.getBoolInput('reviewPerformance', true),
             tl.getBoolInput('reviewBestPractices', true),
