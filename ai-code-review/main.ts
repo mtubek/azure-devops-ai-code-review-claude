@@ -1,11 +1,12 @@
 import tl = require('azure-pipelines-task-lib/task');
 import Anthropic from '@anthropic-ai/sdk';
-import { ChatCompletion } from './chatCompletion';
+import OpenAI from 'openai';
+import { AIProvider, ClaudeProvider, OpenAIProvider, CodexProvider, buildSystemMessage, isCodexModel } from './aiProvider';
 import { Repository } from './repository';
 import { PullRequest } from './pullrequest';
 
 export class Main {
-    private static _chatCompletion: ChatCompletion;
+    private static _providers: AIProvider[] = [];
     private static _repository: Repository;
     private static _pullRequest: PullRequest;
 
@@ -20,105 +21,197 @@ export class Main {
             return;
         }
 
-        const apiKey = tl.getInput('claudeApiKey', true)!;
-        const model = tl.getInput('claudeModel', true)!;
+        // Read common parameters
         const responseLanguage = tl.getInput('responseLanguage', false) ?? 'Polish';
         const fileExtensions = tl.getInput('fileExtensions', false);
         const filesToExclude = tl.getInput('fileExcludes', false);
         const additionalPrompts = tl.getInput('additionalPrompts', false)?.split(',')
-        const promptTokensPricePerMillionTokens = parseFloat(tl.getInput('promptTokensPricePerMillionTokens', false) ?? '0.');
-        const completionTokensPricePerMillionTokens = parseFloat(tl.getInput('completionTokensPricePerMillionTokens', false) ?? '0.');
         const maxTokens = parseInt(tl.getInput('maxTokens', false) ?? '16384');
         const reviewWholeDiffAtOnce = tl.getBoolInput('reviewWholeDiffAtOnce', false);
         const addCostToComments = tl.getBoolInput('addCostToComments', false);
 
-        const client = new Anthropic({
-            apiKey: apiKey
-        });
-        
+        // Read pricing parameters
+        const claudePromptPrice = parseFloat(tl.getInput('claudePromptTokensPrice', false) ?? '3.00');
+        const claudeCompletionPrice = parseFloat(tl.getInput('claudeCompletionTokensPrice', false) ?? '15.00');
+        const openAiPromptPrice = parseFloat(tl.getInput('openAiPromptTokensPrice', false) ?? '2.50');
+        const openAiCompletionPrice = parseFloat(tl.getInput('openAiCompletionTokensPrice', false) ?? '10.00');
+
+        // Read Claude parameters
+        const claudeApiKey = tl.getInput('claudeApiKey', false);
+        const claudeModel = tl.getInput('claudeModel', false);
+
+        // Read OpenAI parameters
+        const openAiApiKey = tl.getInput('openAiApiKey', false);
+        const openAiModel = tl.getInput('openAiModel', false);
+
         this._repository = new Repository();
         this._pullRequest = new PullRequest();
         let filesToReview = await this._repository.GetChangedFiles(fileExtensions, filesToExclude);
 
-        console.info(`Found ${filesToReview.length} files to review: ${filesToReview.join(', ')}`);
+        console.info(`Znaleziono ${filesToReview.length} plików do przeglądu: ${filesToReview.join(', ')}`);
 
         if (filesToReview.length === 0) {
-            console.info('No files to review. Skipping code review.');
-            tl.setResult(tl.TaskResult.Succeeded, "No files to review.");
+            console.info('Brak plików do przeglądu.');
+            tl.setResult(tl.TaskResult.Succeeded, "Brak plików do przeglądu.");
             return;
         }
 
-        this._chatCompletion = new ChatCompletion(
-            client,
-            model,
+        // Build system message
+        const systemMessage = buildSystemMessage(
             responseLanguage,
             tl.getBoolInput('reviewBugs', true),
             tl.getBoolInput('reviewPerformance', true),
             tl.getBoolInput('reviewBestPractices', true),
-            additionalPrompts,
-            maxTokens,
+            additionalPrompts || [],
             filesToReview.length
         );
 
+        // Initialize providers based on configuration
+        if (claudeApiKey && claudeModel) {
+            console.info('Inicjalizacja Claude provider...');
+            const claudeClient = new Anthropic({ apiKey: claudeApiKey });
+            this._providers.push(new ClaudeProvider(
+                claudeClient,
+                claudeModel,
+                responseLanguage,
+                maxTokens,
+                claudePromptPrice,
+                claudeCompletionPrice,
+                systemMessage
+            ));
+        }
+
+        if (openAiApiKey && openAiModel) {
+            const openAiClient = new OpenAI({
+                apiKey: openAiApiKey
+            });
+
+            // Sprawdź czy to model Codex (używa responses API)
+            if (isCodexModel(openAiModel)) {
+                console.info(`Inicjalizacja Codex provider dla modelu ${openAiModel}...`);
+                this._providers.push(new CodexProvider(
+                    openAiClient,
+                    openAiModel,
+                    maxTokens,
+                    openAiPromptPrice,
+                    openAiCompletionPrice,
+                    systemMessage
+                ));
+            } else {
+                console.info(`Inicjalizacja OpenAI provider dla modelu ${openAiModel}...`);
+                this._providers.push(new OpenAIProvider(
+                    openAiClient,
+                    openAiModel,
+                    maxTokens,
+                    openAiPromptPrice,
+                    openAiCompletionPrice,
+                    systemMessage
+                ));
+            }
+        }
+
+        if (this._providers.length === 0) {
+            tl.setResult(tl.TaskResult.Failed, "Nie skonfigurowano żadnego dostawcy AI. Uzupełnij parametry dla Claude lub OpenAI.");
+            return;
+        }
+
+        console.info(`Skonfigurowano ${this._providers.length} dostawców: ${this._providers.map(p => p.getProviderName()).join(', ')}`);
+
         await this._pullRequest.DeleteComments();
 
-        tl.setProgress(0, 'Performing Code Review');
-        let promptTokensTotal = 0;
-        let completionTokensTotal = 0;
-        let fullDiff = '';
-        for (let index = 0; index < filesToReview.length; index++) {
-            const fileToReview = filesToReview[index];
-            let diff = await this._repository.GetDiff(fileToReview);
-            if(!reviewWholeDiffAtOnce) {
-                let review = await this._chatCompletion.PerformCodeReview(diff, fileToReview);
-                promptTokensTotal += review.promptTokens;
-                completionTokensTotal += review.completionTokens;
+        tl.setProgress(0, 'Wykonywanie przeglądu kodu');
 
-                if(review.response.indexOf('NO_COMMENT') < 0) {
-                    console.info(`Completed review of file ${fileToReview}`)
-                    await this._pullRequest.AddComment(fileToReview, review.response);
-                } else {
-                    console.info(`No comments for file ${fileToReview}`)
+        if(!reviewWholeDiffAtOnce) {
+            // Review each file separately with all providers
+            for (let index = 0; index < filesToReview.length; index++) {
+                const fileToReview = filesToReview[index];
+                let diff = await this._repository.GetDiff(fileToReview);
+
+                // Get reviews from all providers
+                for (const provider of this._providers) {
+                    console.info(`[${provider.getProviderName()}] Przeglądanie ${fileToReview}...`);
+                    let review = await provider.performCodeReview(diff, fileToReview);
+
+                    if(review.response && review.response.indexOf('NO_COMMENT') < 0) {
+                        const commentWithProvider = `## 🤖 ${provider.getProviderName()} Review\n\n${review.response}`;
+                        console.info(`[${provider.getProviderName()}] Ukończono przegląd ${fileToReview}`);
+                        await this._pullRequest.AddComment(fileToReview, commentWithProvider);
+                    } else {
+                        console.info(`[${provider.getProviderName()}] Brak komentarzy dla ${fileToReview}`);
+                    }
                 }
 
-                tl.setProgress((fileToReview.length / 100) * index, 'Performing Code Review');
-            } else {
+                tl.setProgress((100 / filesToReview.length) * (index + 1), 'Wykonywanie przeglądu kodu');
+            }
+
+            // Add cost summary comment for file-by-file mode
+            if(addCostToComments && this._providers.length > 0) {
+                let costSummary = '## 💰 Podsumowanie kosztów\n\n';
+                let totalCost = 0;
+
+                for (const provider of this._providers) {
+                    const cost = provider.getTotalCost();
+                    const tokens = provider.getTotalTokens();
+                    totalCost += cost;
+                    costSummary += `**${provider.getProviderName()}:** $${cost.toFixed(6)} (${tokens.prompt} input + ${tokens.completion} output tokens)\n\n`;
+                }
+
+                costSummary += `**Całkowity koszt:** $${totalCost.toFixed(6)}`;
+                await this._pullRequest.AddComment("", costSummary);
+            }
+        } else {
+            // Review whole diff at once with all providers
+            let fullDiff = '';
+            for (const fileToReview of filesToReview) {
+                let diff = await this._repository.GetDiff(fileToReview);
                 fullDiff += diff;
             }
-        }
-        if(reviewWholeDiffAtOnce) {
-            let review = await this._chatCompletion.PerformCodeReview(fullDiff, 'Full Diff');
-            promptTokensTotal += review.promptTokens;
-            completionTokensTotal += review.completionTokens;
 
-            let comment = review.response;
-            if(addCostToComments) {
-                const promptTokensCost = promptTokensTotal * (promptTokensPricePerMillionTokens / 1000000);
-                const completionTokensCost = completionTokensTotal * (completionTokensPricePerMillionTokens / 1000000);
-                const totalCostString = (promptTokensCost + completionTokensCost).toFixed(6);
-                comment += `\n\n💰 _It cost $${totalCostString} to create this review_`;
+            // Get reviews from all providers for the full diff
+            for (const provider of this._providers) {
+                console.info(`[${provider.getProviderName()}] Przeglądanie całego diffa...`);
+                let review = await provider.performCodeReview(fullDiff, 'Full Diff');
+
+                if(review.response && review.response.indexOf('NO_COMMENT') < 0) {
+                    let comment = `## 🤖 ${provider.getProviderName()} Review\n\n${review.response}`;
+
+                    // Add cost info for this provider
+                    if(addCostToComments) {
+                        const cost = provider.getTotalCost();
+                        const tokens = provider.getTotalTokens();
+                        comment += `\n\n💰 _Koszt: $${cost.toFixed(6)} (${tokens.prompt} input + ${tokens.completion} output tokens)_`;
+                    }
+
+                    await this._pullRequest.AddComment("", comment);
+                    console.info(`[${provider.getProviderName()}] Ukończono przegląd dla ${filesToReview.length} plików`);
+                } else {
+                    console.info(`[${provider.getProviderName()}] Brak komentarzy dla całego diffa`);
+                }
+            }
+        }
+
+        // Cost analysis logging
+        if(this._providers.length > 0) {
+            console.info(`\n--- 💰 Analiza kosztów ---`);
+            let totalCost = 0;
+
+            for (const provider of this._providers) {
+                const cost = provider.getTotalCost();
+                const tokens = provider.getTotalTokens();
+                totalCost += cost;
+
+                console.info(`\n[${provider.getProviderName()}]`);
+                console.info(`  🪙 Input Tokens  : ${tokens.prompt}`);
+                console.info(`  🪙 Output Tokens : ${tokens.completion}`);
+                console.info(`  💵 Koszt         : $${cost.toFixed(6)}`);
             }
 
-            if(review.response.indexOf('NO_COMMENT') < 0) {
-                console.info(`Completed review for ${filesToReview.length} files`)
-                await this._pullRequest.AddComment("", comment);
-            } else {
-                console.info(`No comments for full diff`)
+            if(this._providers.length > 1) {
+                console.info(`\n💰 Całkowity koszt: $${totalCost.toFixed(6)}`);
             }
         }
 
-        if(promptTokensPricePerMillionTokens !== 0 || completionTokensPricePerMillionTokens !== 0) {
-            const promptTokensCost = promptTokensTotal * (promptTokensPricePerMillionTokens / 1000000);
-            const completionTokensCost = completionTokensTotal * (completionTokensPricePerMillionTokens / 1000000);
-            const totalCostString = (promptTokensCost + completionTokensCost).toFixed(6);
-            console.info(`--- Cost Analysis ---`);
-            console.info(`🪙 Total Prompt Tokens     : ${promptTokensTotal}`);
-            console.info(`🪙 Total Completion Tokens : ${completionTokensTotal}`); 
-            console.info(`💵 Input Tokens Cost       : ${promptTokensCost.toFixed(6)} $`);
-            console.info(`💵 Output Tokens Cost      : ${completionTokensCost.toFixed(6)} $`);
-            console.info(`💰 Total Cost              : ${totalCostString} $`);
-        }
-        tl.setResult(tl.TaskResult.Succeeded, "Pull Request reviewed.");
+        tl.setResult(tl.TaskResult.Succeeded, "Przegląd Pull Request zakończony.");
     }
 }
 

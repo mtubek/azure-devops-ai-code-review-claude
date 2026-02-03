@@ -40,7 +40,7 @@ export class ChatCompletion {
 `
         if (numberOfFilesToReview > 1) {
             this.systemMessage += `
-        Create table that lists the files and their respective comments. For example:
+        Create table that lists the files (only file name with bold) and their respective comments. For example:
 
         Summary of changes: ...
 

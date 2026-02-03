@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "ai-code-review-claude",
   "publisher": "Maciej Tubek",
-  "version": "1.0.4",
+  "version": "1.3.0",
   "name": "AI Claude Code Review Task",
   "description": "AI code review extension to review pull request changes using your own Claude endpoints",
   "public": true,

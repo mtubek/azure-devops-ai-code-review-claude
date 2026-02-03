@@ -13,6 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
+    "openai": "^4.67.1",
     "azure-devops-extension-sdk": "4.0.2",
     "azure-pipelines-task-lib": "4.17.3",
     "simple-git": "3.27.0"

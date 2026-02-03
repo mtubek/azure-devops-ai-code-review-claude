@@ -8,26 +8,42 @@
     "author": "Maciej Tubek",
     "version": {
         "Major": 1,
-        "Minor": 0,
-        "Patch": 4
+        "Minor": 3,
+        "Patch": 0
     },
     "instanceNameFormat": "AI Code Review $(message)",
     "inputs": [
         {
             "name": "claudeApiKey",
             "type": "string",
-            "label": "Claude API Key",
+            "label": "Claude API Key (Optional)",
             "defaultValue": "",
-            "required": true,
-            "helpMarkDown": "Your Anthropic Claude API key. Get one at https://console.anthropic.com/"
+            "required": false,
+            "helpMarkDown": "Your Anthropic Claude API key. Get one at https://console.anthropic.com/. Leave empty to skip Claude."
         },
         {
             "name": "claudeModel",
             "type": "string",
-            "label": "Claude Model",
-            "defaultValue": "claude-3-5-sonnet-20241022",
-            "required": true,
-            "helpMarkDown": "Claude model to use (e.g., claude-3-5-sonnet-20241022, claude-3-opus-20240229). See https://docs.anthropic.com/en/docs/models-overview"
+            "label": "Claude Model (Optional)",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": "Claude model to use (e.g., claude-3-5-sonnet-20241022, claude-3-opus-20240229). Leave empty to skip Claude."
+        },
+        {
+            "name": "openAiApiKey",
+            "type": "string",
+            "label": "OpenAI API Key (Optional)",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": "Your OpenAI API key from platform.openai.com. Leave empty to skip OpenAI."
+        },
+        {
+            "name": "openAiModel",
+            "type": "string",
+            "label": "OpenAI Model (Optional)",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": "OpenAI model to use:\n- Chat models: gpt-5, gpt-5-mini, gpt-4o, gpt-4o-mini\n- Codex models: gpt-5-codex, gpt-5.1-codex, gpt-5.1-codex-max\n\nLeave empty to skip OpenAI."
         },
         {
             "name": "responseLanguage",
@@ -90,20 +106,36 @@
             "helpMarkDown": "Specify additional prompts to enhance the code review process.\n\n- This prompt will be used in conjunction with the main code review prompts.\n\n**Example:**\n```plaintext\nFix variable naming, Ensure consistent indentation, Review error handling approach\n```"
         },
         {
-            "name": "promptTokensPricePerMillionTokens",
+            "name": "claudePromptTokensPrice",
             "type": "string",
-            "label": "Input prompt tokens price per million tokens",
-            "defaultValue": "0",
+            "label": "Claude: Input tokens price per million",
+            "defaultValue": "3.00",
             "required": false,
-            "helpMarkDown": "Unit price of input tokens per million tokens. Check from Azure pricing table."
+            "helpMarkDown": "Claude input token price per million. Default for Claude 3.5 Sonnet: $3.00"
         },
         {
-            "name": "completionTokensPricePerMillionTokens",
-            "type": "multiLine",
-            "label": "Completion output tokens price per million tokens",
-            "defaultValue": "0",
+            "name": "claudeCompletionTokensPrice",
+            "type": "string",
+            "label": "Claude: Output tokens price per million",
+            "defaultValue": "15.00",
             "required": false,
-            "helpMarkDown": "Unit price of completion tokens per million tokens. Check from Azure pricing table."
+            "helpMarkDown": "Claude output token price per million. Default for Claude 3.5 Sonnet: $15.00"
+        },
+        {
+            "name": "openAiPromptTokensPrice",
+            "type": "string",
+            "label": "OpenAI: Input tokens price per million",
+            "defaultValue": "1.25",
+            "required": false,
+            "helpMarkDown": "OpenAI input token price per million. Check https://platform.openai.com/docs/pricing for your model"
+        },
+        {
+            "name": "openAiCompletionTokensPrice",
+            "type": "string",
+            "label": "OpenAI: Output tokens price per million",
+            "defaultValue": "10.00",
+            "required": false,
+            "helpMarkDown": "OpenAI output token price per million. Check https://platform.openai.com/docs/pricing for your model"
         },
         {
             "name": "reviewWholeDiffAtOnce",
